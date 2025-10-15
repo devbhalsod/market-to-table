@@ -50,7 +50,7 @@ const FarmerDashboard = () => {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$2,450</div>
+                <div className="text-2xl font-bold">₹1,96,000</div>
                 <p className="text-xs text-muted-foreground">This month</p>
               </CardContent>
             </Card>

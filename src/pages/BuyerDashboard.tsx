@@ -11,7 +11,7 @@ const BuyerDashboard = () => {
       id: "1",
       date: "2025-01-10",
       items: "Fresh Tomatoes, Organic Carrots",
-      total: 12.48,
+      total: 1000,
       status: "delivered",
       farmer: "Green Valley Farm"
     },
@@ -19,7 +19,7 @@ const BuyerDashboard = () => {
       id: "2",
       date: "2025-01-12",
       items: "Sweet Corn, Fresh Strawberries",
-      total: 18.49,
+      total: 1480,
       status: "in-transit",
       farmer: "Harvest Hills"
     },
@@ -27,15 +27,15 @@ const BuyerDashboard = () => {
       id: "3",
       date: "2025-01-14",
       items: "Farm Eggs, Fresh Milk",
-      total: 8.48,
+      total: 680,
       status: "pending",
       farmer: "Happy Hens Farm"
     }
   ];
 
   const savedItems = [
-    { id: "1", name: "Fresh Tomatoes", price: 3.99, farmer: "Green Valley Farm" },
-    { id: "2", name: "Organic Carrots", price: 2.49, farmer: "Sunshine Organic" },
+    { id: "1", name: "Fresh Tomatoes", price: 320, farmer: "Green Valley Farm" },
+    { id: "2", name: "Organic Carrots", price: 200, farmer: "Sunshine Organic" },
   ];
 
   const getStatusColor = (status: string) => {
@@ -97,7 +97,7 @@ const BuyerDashboard = () => {
                       </div>
                       
                       <div className="flex items-center justify-between pt-2 border-t">
-                        <span className="font-semibold text-lg">${order.total.toFixed(2)}</span>
+                        <span className="font-semibold text-lg">₹{order.total}</span>
                         <Button variant="outline" size="sm">View Details</Button>
                       </div>
                     </div>
@@ -121,7 +121,7 @@ const BuyerDashboard = () => {
                       <p className="font-semibold">{item.name}</p>
                       <p className="text-xs text-muted-foreground">by {item.farmer}</p>
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-primary">${item.price}</span>
+                        <span className="font-bold text-primary">₹{item.price}</span>
                         <Button size="sm">Add to Cart</Button>
                       </div>
                     </div>
@@ -140,7 +140,7 @@ const BuyerDashboard = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Spent</span>
-                    <span className="font-bold">$342.50</span>
+                    <span className="font-bold">₹27,400</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Saved Items</span>

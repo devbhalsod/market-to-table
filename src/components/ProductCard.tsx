@@ -48,7 +48,7 @@ const ProductCard = ({
         </div>
         
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-primary">${price}</span>
+          <span className="text-2xl font-bold text-primary">₹{price}</span>
           <span className="text-sm text-muted-foreground">/ {unit}</span>
         </div>
         
