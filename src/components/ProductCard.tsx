@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, ShoppingCart } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 interface ProductCardProps {
   id: string;
@@ -16,6 +17,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ 
+  id,
   name, 
   image, 
   price, 
@@ -25,6 +27,18 @@ const ProductCard = ({
   farmerName, 
   available 
 }: ProductCardProps) => {
+  const { addToCart } = useCart();
+  
+  const handleAddToCart = () => {
+    addToCart({
+      id,
+      name,
+      image,
+      price,
+      unit,
+      farmerName,
+    });
+  };
   return (
     <Card className="group overflow-hidden transition-all hover:shadow-lg">
       <div className="relative aspect-square overflow-hidden">
@@ -58,7 +72,7 @@ const ProductCard = ({
       </CardContent>
       
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full group/btn">
+        <Button className="w-full group/btn" onClick={handleAddToCart}>
           <ShoppingCart className="h-4 w-4 mr-2 transition-transform group-hover/btn:scale-110" />
           Add to Cart
         </Button>
