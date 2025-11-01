@@ -24,7 +24,12 @@ const Cart = () => {
       if (error) throw error;
 
       if (data?.url) {
-        window.location.href = data.url;
+        // Open in new tab so user doesn't lose cart context
+        window.open(data.url, '_blank');
+        toast({
+          title: "Redirecting to Checkout",
+          description: "Opening Stripe checkout in a new tab...",
+        });
       }
     } catch (error) {
       console.error('Checkout error:', error);
