@@ -14,7 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      order_items: {
+        Row: {
+          created_at: string
+          farmer_name: string
+          id: string
+          image: string
+          order_id: string
+          price: number
+          product_id: string
+          product_name: string
+          quantity: number
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          farmer_name: string
+          id?: string
+          image: string
+          order_id: string
+          price: number
+          product_id: string
+          product_name: string
+          quantity: number
+          unit: string
+        }
+        Update: {
+          created_at?: string
+          farmer_name?: string
+          id?: string
+          image?: string
+          order_id?: string
+          price?: number
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          stripe_session_id: string | null
+          total: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_session_id?: string | null
+          total: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_session_id?: string | null
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

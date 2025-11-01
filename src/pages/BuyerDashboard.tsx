@@ -1,37 +1,65 @@
+import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Heart, Clock, CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Order {
+  id: string;
+  created_at: string;
+  total: number;
+  status: string;
+  order_items: Array<{
+    product_name: string;
+    farmer_name: string;
+    quantity: number;
+  }>;
+}
 
 const BuyerDashboard = () => {
-  const orders = [
-    {
-      id: "1",
-      date: "2025-01-10",
-      items: "Fresh Tomatoes, Organic Carrots",
-      total: 1000,
-      status: "delivered",
-      farmer: "Green Valley Farm"
-    },
-    {
-      id: "2",
-      date: "2025-01-12",
-      items: "Sweet Corn, Fresh Strawberries",
-      total: 1480,
-      status: "in-transit",
-      farmer: "Harvest Hills"
-    },
-    {
-      id: "3",
-      date: "2025-01-14",
-      items: "Farm Eggs, Fresh Milk",
-      total: 680,
-      status: "pending",
-      farmer: "Happy Hens Farm"
-    }
-  ];
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalSpent, setTotalSpent] = useState(0);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (
+              product_name,
+              farmer_name,
+              quantity
+            )
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setOrders(data || []);
+        
+        // Calculate total spent
+        const total = (data || []).reduce((sum, order) => sum + Number(order.total), 0);
+        setTotalSpent(total);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [user]);
 
   const savedItems = [
     { id: "1", name: "Fresh Tomatoes", price: 320, farmer: "Green Valley Farm" },
@@ -40,6 +68,7 @@ const BuyerDashboard = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "completed": return "bg-success text-white";
       case "delivered": return "bg-success text-white";
       case "in-transit": return "bg-info text-white";
       case "pending": return "bg-warning text-white";
@@ -49,11 +78,31 @@ const BuyerDashboard = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case "completed":
       case "delivered": return <CheckCircle className="h-4 w-4" />;
       case "in-transit": return <ShoppingBag className="h-4 w-4" />;
       case "pending": return <Clock className="h-4 w-4" />;
       default: return null;
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getOrderSummary = (order: Order) => {
+    const itemNames = order.order_items.map(item => 
+      `${item.product_name} (${item.quantity})`
+    ).join(', ');
+    return itemNames || 'No items';
+  };
+
+  const getFarmerName = (order: Order) => {
+    return order.order_items[0]?.farmer_name || 'Unknown';
   };
 
   return (
@@ -78,30 +127,36 @@ const BuyerDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold">Order #{order.id}</p>
-                          <p className="text-sm text-muted-foreground">{order.date}</p>
+                  {loading ? (
+                    <p className="text-center text-muted-foreground py-8">Loading orders...</p>
+                  ) : orders.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No orders yet</p>
+                  ) : (
+                    orders.map((order) => (
+                      <div key={order.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold">Order #{order.id.slice(0, 8)}</p>
+                            <p className="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
+                          </div>
+                          <Badge className={getStatusColor(order.status)}>
+                            {getStatusIcon(order.status)}
+                            <span className="ml-1 capitalize">{order.status}</span>
+                          </Badge>
                         </div>
-                        <Badge className={getStatusColor(order.status)}>
-                          {getStatusIcon(order.status)}
-                          <span className="ml-1 capitalize">{order.status}</span>
-                        </Badge>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm">{getOrderSummary(order)}</p>
+                          <p className="text-xs text-muted-foreground">from {getFarmerName(order)}</p>
+                        </div>
+                        
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <span className="font-semibold text-lg">₹{Number(order.total).toFixed(0)}</span>
+                          <Button variant="outline" size="sm">View Details</Button>
+                        </div>
                       </div>
-                      
-                      <div className="space-y-1">
-                        <p className="text-sm">{order.items}</p>
-                        <p className="text-xs text-muted-foreground">from {order.farmer}</p>
-                      </div>
-                      
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <span className="font-semibold text-lg">₹{order.total}</span>
-                        <Button variant="outline" size="sm">View Details</Button>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -136,11 +191,11 @@ const BuyerDashboard = () => {
                 <CardContent className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Orders</span>
-                    <span className="font-bold">28</span>
+                    <span className="font-bold">{orders.length}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Spent</span>
-                    <span className="font-bold">₹27,400</span>
+                    <span className="font-bold">₹{totalSpent.toFixed(0)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Saved Items</span>

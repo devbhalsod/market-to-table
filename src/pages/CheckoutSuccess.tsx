@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -6,18 +6,62 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CheckoutSuccess = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
-  const { clearCart } = useCart();
+  const { items, clearCart, totalPrice } = useCart();
+  const { user } = useAuth();
+  const [orderSaved, setOrderSaved] = useState(false);
 
   useEffect(() => {
-    // Clear cart on successful payment
-    if (sessionId) {
-      clearCart();
-    }
-  }, [sessionId, clearCart]);
+    const saveOrder = async () => {
+      if (!sessionId || !user || orderSaved || items.length === 0) return;
+
+      try {
+        // Create order record
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            user_id: user.id,
+            total: totalPrice + 50, // Including delivery
+            status: 'completed',
+            stripe_session_id: sessionId,
+          })
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+
+        // Create order items
+        const orderItems = items.map(item => ({
+          order_id: order.id,
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          unit: item.unit,
+          farmer_name: item.farmerName,
+          image: item.image,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
+
+        if (itemsError) throw itemsError;
+
+        setOrderSaved(true);
+        clearCart();
+      } catch (error) {
+        console.error('Error saving order:', error);
+      }
+    };
+
+    saveOrder();
+  }, [sessionId, user, items, totalPrice, clearCart, orderSaved]);
 
   return (
     <div className="min-h-screen flex flex-col">
