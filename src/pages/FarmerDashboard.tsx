@@ -61,10 +61,27 @@ const FarmerDashboard = () => {
     }
 
     setProducts(data || []);
+    
+    // Fetch order items for this farmer
+    const { data: orderItems, error: orderError } = await supabase
+      .from("order_items")
+      .select("order_id, price, quantity")
+      .eq("farmer_name", user.email || "");
+
+    if (orderError) {
+      console.error("Failed to fetch order stats:", orderError);
+    }
+
+    // Calculate stats
+    const uniqueOrders = new Set(orderItems?.map(item => item.order_id) || []);
+    const totalRevenue = orderItems?.reduce((sum, item) => {
+      return sum + (Number(item.price) * item.quantity);
+    }, 0) || 0;
+
     setStats({
       totalProducts: data?.length || 0,
-      totalOrders: 48, // TODO: Fetch from orders
-      revenue: 196000, // TODO: Calculate from orders
+      totalOrders: uniqueOrders.size,
+      revenue: totalRevenue,
     });
   };
 
