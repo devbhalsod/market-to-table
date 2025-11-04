@@ -24,6 +24,7 @@ const productSchema = z.object({
   quantity: z.string().min(1, "Quantity is required"),
   location: z.string().min(1, "Location is required"),
   description: z.string().min(1, "Description is required").max(500),
+  image: z.any().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -32,6 +33,7 @@ const FarmerDashboard = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [stats, setStats] = useState({ totalProducts: 0, totalOrders: 0, revenue: 0 });
+  const [uploading, setUploading] = useState(false);
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -95,6 +97,34 @@ const FarmerDashboard = () => {
       return;
     }
 
+    setUploading(true);
+    let imageUrl = null;
+
+    // Upload image if provided
+    if (data.image && data.image[0]) {
+      const file = data.image[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        toast.error("Failed to upload image");
+        console.error(uploadError);
+        setUploading(false);
+        return;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      imageUrl = publicUrl;
+    }
+
     const { error } = await supabase.from("products").insert({
       farmer_id: user.id,
       name: data.name,
@@ -104,17 +134,20 @@ const FarmerDashboard = () => {
       stock_quantity: parseInt(data.quantity),
       location: data.location,
       description: data.description,
+      image_url: imageUrl,
       is_available: true,
     });
 
     if (error) {
       toast.error("Failed to add product");
       console.error(error);
+      setUploading(false);
       return;
     }
 
     toast.success("Product added successfully!");
     form.reset();
+    setUploading(false);
     fetchProducts();
   };
 
@@ -303,9 +336,28 @@ const FarmerDashboard = () => {
                     )}
                   />
                   
-                  <Button type="submit" className="w-full md:w-auto" disabled={form.formState.isSubmitting}>
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field: { value, onChange, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>Product Image</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => onChange(e.target.files)}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button type="submit" className="w-full md:w-auto" disabled={form.formState.isSubmitting || uploading}>
                     <Plus className="h-4 w-4 mr-2" />
-                    {form.formState.isSubmitting ? "Adding..." : "List Product"}
+                    {uploading ? "Uploading..." : form.formState.isSubmitting ? "Adding..." : "List Product"}
                   </Button>
                 </form>
               </Form>
