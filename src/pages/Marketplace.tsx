@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -6,80 +6,44 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, SlidersHorizontal } from "lucide-react";
-
-// Demo data
-const products = [
-  {
-    id: "1",
-    name: "Fresh Tomatoes",
-    image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&h=400&fit=crop",
-    price: 320,
-    unit: "kg",
-    category: "Vegetables",
-    location: "Punjab",
-    farmerName: "Green Valley Farm",
-    available: 50
-  },
-  {
-    id: "2",
-    name: "Organic Carrots",
-    image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&h=400&fit=crop",
-    price: 200,
-    unit: "kg",
-    category: "Vegetables",
-    location: "Haryana",
-    farmerName: "Sunshine Organic",
-    available: 75
-  },
-  {
-    id: "3",
-    name: "Sweet Corn",
-    image: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&h=400&fit=crop",
-    price: 360,
-    unit: "dozen",
-    category: "Vegetables",
-    location: "Karnataka",
-    farmerName: "Harvest Hills",
-    available: 30
-  },
-  {
-    id: "4",
-    name: "Fresh Strawberries",
-    image: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400&h=400&fit=crop",
-    price: 480,
-    unit: "kg",
-    category: "Fruits",
-    location: "Maharashtra",
-    farmerName: "Berry Best Farm",
-    available: 40
-  },
-  {
-    id: "5",
-    name: "Farm Eggs",
-    image: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&h=400&fit=crop",
-    price: 400,
-    unit: "dozen",
-    category: "Poultry",
-    location: "Uttar Pradesh",
-    farmerName: "Happy Hens Farm",
-    available: 100
-  },
-  {
-    id: "6",
-    name: "Fresh Milk",
-    image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop",
-    price: 280,
-    unit: "liter",
-    category: "Dairy",
-    location: "Rajasthan",
-    farmerName: "Dairy Delight",
-    available: 60
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Marketplace = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    let query = supabase
+      .from("products")
+      .select("*")
+      .eq("is_available", true);
+
+    if (selectedCategory !== "all") {
+      query = query.eq("category", selectedCategory);
+    }
+
+    if (searchQuery) {
+      query = query.ilike("name", `%${searchQuery}%`);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
+
+    if (error) {
+      toast.error("Failed to fetch products");
+      console.error(error);
+    } else {
+      setProducts(data || []);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [selectedCategory, searchQuery]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -134,11 +98,32 @@ const Marketplace = () => {
         {/* Products Grid */}
         <section className="py-12">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} {...product} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading products...</p>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No products found</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {products.map((product) => (
+                  <ProductCard 
+                    key={product.id} 
+                    id={product.id}
+                    name={product.name}
+                    image={product.image_url || "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=400&h=400&fit=crop"}
+                    price={Number(product.price)}
+                    unit={product.unit}
+                    category={product.category}
+                    location={product.location}
+                    farmerName="Local Farmer"
+                    available={product.stock_quantity}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>
