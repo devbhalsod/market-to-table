@@ -107,51 +107,20 @@ const Marketplace = () => {
                 <p className="text-muted-foreground">No products found</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {products.map((product) => (
-                  <div key={product.id} className="flex gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow bg-card">
-                    <img 
-                      src={product.image_url || "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=400&h=400&fit=crop"} 
-                      alt={product.name}
-                      className="w-32 h-32 object-cover rounded-md"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="font-semibold text-lg">{product.name}</h3>
-                          <Badge className="mt-1">{product.category}</Badge>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-2xl font-bold text-primary">₹{Number(product.price)}</span>
-                          <span className="text-sm text-muted-foreground">/ {product.unit}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-                        <MapPin className="h-3 w-3" />
-                        <span>{product.location}</span>
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {product.stock_quantity} {product.unit} available
-                      </p>
-                      
-                      <Button 
-                        className="w-full"
-                        onClick={() => addToCart({
-                          id: product.id,
-                          name: product.name,
-                          image: product.image_url || "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=400&h=400&fit=crop",
-                          price: Number(product.price),
-                          unit: product.unit,
-                          farmerName: "Local Farmer",
-                        })}
-                      >
-                        <ShoppingCart className="h-4 w-4 mr-2" />
-                        Add to Cart
-                      </Button>
-                    </div>
-                  </div>
+                  <ProductCard 
+                    key={product.id} 
+                    id={product.id}
+                    name={product.name}
+                    image={product.image_url || "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=400&h=400&fit=crop"}
+                    price={Number(product.price)}
+                    unit={product.unit}
+                    category={product.category}
+                    location={product.location}
+                    farmerName="Local Farmer"
+                    available={product.stock_quantity}
+                  />
                 ))}
               </div>
             )}
